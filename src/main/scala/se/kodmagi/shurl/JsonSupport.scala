@@ -9,4 +9,5 @@ trait JsonSupport extends SprayJsonSupport {
 
   implicit val longUrlJsonFormat = jsonFormat1(LongUrl)
   implicit val shortUrlJsonFormat = jsonFormat1(ShortUrl)
+  implicit val shortUrlIdJsonFormat = jsonFormat1(ShortUrlId)
 }

@@ -1,5 +1,7 @@
 package se.kodmagi.shurl
 
+import java.net.URL
+
 import akka.actor.{ ActorRef, ActorSystem }
 import akka.event.Logging
 import akka.http.scaladsl.model.StatusCodes
@@ -24,15 +26,15 @@ trait ShurlRoutes extends JsonSupport {
 
   implicit lazy val timeout = Timeout(5.seconds) // usually we'd obtain the timeout from the system's configuration
 
-  lazy val shurlRoutes: Route = concat(
-    pathPrefix("create") {
+  def shurlRoutes(baseUrl: URL): Route = concat(
+    path("create") {
       pathEnd {
         post {
           entity(as[LongUrl]) { longUrl =>
-            val urlCreated: Future[ShortUrl] =
-              (shurlRegistryActor ? CreateShortUrl(longUrl)).mapTo[ShortUrl]
-            onSuccess(urlCreated) { shortUrl =>
-              log.info(s"Created short url $shortUrl -> $longUrl")
+            val idCreated = (shurlRegistryActor ? CreateShortUrl(longUrl)).mapTo[ShortUrlId]
+            onSuccess(idCreated) { shortUrlId =>
+              val shortUrl = shortUrlId.toURL(baseUrl)
+              log.info(s"Created short url $longUrl -> $shortUrl")
               complete((StatusCodes.Created, shortUrl))
             }
           }
@@ -42,10 +44,10 @@ trait ShurlRoutes extends JsonSupport {
     path(Segment) { name =>
       concat(
         get {
-          val maybeUrl: Future[Option[LongUrl]] =
-            (shurlRegistryActor ? GetLongUrl(ShortUrl(name))).mapTo[Option[LongUrl]]
-          rejectEmptyResponse {
-            complete(maybeUrl)
+          val response = (shurlRegistryActor ? GetLongUrl(ShortUrlId(name))).mapTo[Option[LongUrl]]
+          onSuccess(response) {
+            case Some(url) ⇒ redirect(url.uri, StatusCodes.PermanentRedirect)
+            case None ⇒ complete(StatusCodes.NotFound, ShortUrlId(name))
           }
         })
     })

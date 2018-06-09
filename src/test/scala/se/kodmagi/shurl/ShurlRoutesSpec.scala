@@ -1,5 +1,7 @@
 package se.kodmagi.shurl
 
+import java.net.URL
+
 import akka.actor.ActorRef
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
@@ -11,36 +13,52 @@ class ShurlRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scal
   with ShurlRoutes {
   override val shurlRegistryActor: ActorRef = system.actorOf(ShurlRegistryActor.props, "shurlRegistry")
 
-  lazy val routes = shurlRoutes
+  val baseUrl = new URL("http://localhost:8080")
+  lazy val routes = shurlRoutes(baseUrl)
+  val longUrl = LongUrl("http://www.kodmagi.se")
+  val shortUrlId = toShortUrlId(longUrl)
 
   "ShurlRoutes" should {
-    //    "return no users if no present (GET /users)" in {
-    //      val request = HttpRequest(uri = "/users")
-    //
-    //      request ~> routes ~> check {
-    //        status should ===(StatusCodes.OK)
-    //
-    //        // we expect the response to be json:
-    //        contentType should ===(ContentTypes.`application/json`)
-    //
-    //        // and no entries should be in the list:
-    //        entityAs[String] should ===("""{"users":[]}""")
-    //      }
-    //    }
-    "be able create a short url (POST /create)" in {
-      val shortUrl = ShortUrl("http://www.kodmagi.se")
-      val shortEntity = Marshal(shortUrl).to[MessageEntity].futureValue // futureValue is from ScalaFutures
-
-      val request = Post("/create").withEntity(shortEntity)
+    "Create a short url (POST /create)" in {
+      val request = postLongUrlRequest(longUrl)
 
       request ~> routes ~> check {
         status should ===(StatusCodes.Created)
 
         contentType should ===(ContentTypes.`application/json`)
 
-        entityAs[String] should ===("""{"description":"User Kapi created."}""")
+        entityAs[String] should ===(s"""{"url":"$baseUrl/${shortUrlId.id}"}""")
       }
     }
 
+    "return NotFound (GET /-1)" in {
+      val request = HttpRequest(uri = "/-1")
+
+      request ~> routes ~> check {
+        status should ===(StatusCodes.NotFound)
+      }
+    }
+
+    "return Redirect (GET /{existing shortId})" in {
+      // create the ur
+      postLongUrlRequest(longUrl) ~> routes
+
+      val request = HttpRequest(uri = s"/$shortUrlId")
+
+      request ~> routes ~> check {
+        status should ===(StatusCodes.Redirection)
+
+        // we expect the response to be json:
+        contentType should ===(ContentTypes.`application/json`)
+
+        // and no entries should be in the list:
+        entityAs[String] should ===("""{"users":[]}""")
+      }
+    }
+  }
+
+  private def postLongUrlRequest(longUrl: LongUrl) = {
+    val longEntity = Marshal(longUrl).to[MessageEntity].futureValue // futureValue is from ScalaFutures
+    Post("/create").withEntity(longEntity)
   }
 }

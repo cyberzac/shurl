@@ -6,7 +6,7 @@ object ShurlRegistryActor {
 
   final case class CreateShortUrl(longUrl: LongUrl)
 
-  final case class GetLongUrl(shortUrl: ShortUrl)
+  final case class GetLongUrl(shortUrl: ShortUrlId)
 
   def props: Props = Props[ShurlRegistryActor]
 }
@@ -17,14 +17,14 @@ class ShurlRegistryActor extends Actor with ActorLogging {
 
   def receive: Receive = {
     case CreateShortUrl(longUrl) ⇒
-      val shortUrl = shortenUrl(longUrl)
-      if (context.child(shortUrl.value).isEmpty) {
-        context.actorOf(ShurlActor.props(longUrl), shortUrl.value)
+      val shortUrl = toShortUrlId(longUrl)
+      if (context.child(shortUrl.id).isEmpty) {
+        context.actorOf(ShurlActor.props(longUrl), shortUrl.id)
       }
       sender() ! shortUrl
 
     case GetLongUrl(shortUrl) ⇒
-      context.child(shortUrl.value) match {
+      context.child(shortUrl.id) match {
         case Some(ref) ⇒ ref forward ShurlActor.GetLongUrl
         case None ⇒ sender() ! None
       }
