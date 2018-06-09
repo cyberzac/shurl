@@ -1,5 +1,4 @@
 package se.kodmagi.shurl
-
 import java.net.URL
 
 import akka.actor.{ ActorRef, ActorSystem }
@@ -18,34 +17,29 @@ import scala.concurrent.duration._
 
 trait ShurlRoutes extends JsonSupport {
   implicit def system: ActorSystem
-
   lazy val log = Logging(system, classOf[ShurlRoutes])
-
   def shurlRegistryActor: ActorRef
-
-  implicit lazy val timeout = Timeout(5.seconds) // usually we'd obtain the timeout from the system's configuration
+  implicit val timeout = Timeout(5.seconds) // usually we'd obtain the timeout from the system's configuration
 
   def shurlRoutes(baseUrl: URL): Route = concat(
     path("create") {
-      pathEnd {
-        post {
-          entity(as[LongUrl]) { longUrl =>
-            val idCreated = (shurlRegistryActor ? CreateShortUrl(longUrl)).mapTo[ShortUrlId]
-            onSuccess(idCreated) { shortUrlId =>
-              val shortUrl = shortUrlId.toURL(baseUrl)
-              log.info(s"Created short url $longUrl -> $shortUrl")
-              complete((StatusCodes.Created, shortUrl))
-            }
+      post {
+        entity(as[LongUrl]) { longUrl =>
+          val idCreated = (shurlRegistryActor ? CreateShortUrl(longUrl)).mapTo[ShortUrlId]
+          onSuccess(idCreated) { shortUrlId =>
+            val shortUrl = shortUrlId.toURL(baseUrl)
+            log.info(s"Created short url $longUrl -> $shortUrl")
+            complete((StatusCodes.Created, shortUrl))
           }
         }
       }
     },
-    path(Segment) { name =>
+    path(Segment) { urlId =>
       get {
-        val response = (shurlRegistryActor ? GetLongUrl(ShortUrlId(name))).mapTo[Option[LongUrl]]
+        val response = (shurlRegistryActor ? GetLongUrl(ShortUrlId(urlId))).mapTo[Option[LongUrl]]
         onSuccess(response) {
           case Some(url) ⇒ redirect(url.uri, StatusCodes.PermanentRedirect)
-          case None ⇒ complete(StatusCodes.NotFound, ShortUrlId(name))
+          case None ⇒ complete(StatusCodes.NotFound, ShortUrlId(urlId))
         }
       }
     })
