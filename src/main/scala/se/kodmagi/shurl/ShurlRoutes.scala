@@ -14,7 +14,6 @@ import akka.pattern.ask
 import akka.util.Timeout
 import se.kodmagi.shurl.ShurlRegistryActor.{ CreateShortUrl, GetLongUrl }
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
 
 trait ShurlRoutes extends JsonSupport {
@@ -42,13 +41,12 @@ trait ShurlRoutes extends JsonSupport {
       }
     },
     path(Segment) { name =>
-      concat(
-        get {
-          val response = (shurlRegistryActor ? GetLongUrl(ShortUrlId(name))).mapTo[Option[LongUrl]]
-          onSuccess(response) {
-            case Some(url) ⇒ redirect(url.uri, StatusCodes.PermanentRedirect)
-            case None ⇒ complete(StatusCodes.NotFound, ShortUrlId(name))
-          }
-        })
+      get {
+        val response = (shurlRegistryActor ? GetLongUrl(ShortUrlId(name))).mapTo[Option[LongUrl]]
+        onSuccess(response) {
+          case Some(url) ⇒ redirect(url.uri, StatusCodes.PermanentRedirect)
+          case None ⇒ complete(StatusCodes.NotFound, ShortUrlId(name))
+        }
+      }
     })
 }
