@@ -9,7 +9,7 @@ package object shurl {
     def shortUrlId: ShortUrlId = ShortUrlId(url.hashCode.toHexString) // Todo make nicer
   }
   final case class ShortUrlId(id: String) {
-    def toURL(baseURL: URL): ShortUrl = ShortUrl(s"${baseURL.toExternalForm}/$id")
+    def toURL(implicit baseURL: URL): ShortUrl = ShortUrl(s"${baseURL.toExternalForm}/$id")
   }
   final case class ShortUrl(url: String)
 }

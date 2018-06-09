@@ -17,17 +17,18 @@ import scala.concurrent.duration._
 
 trait ShurlRoutes extends JsonSupport {
   implicit def system: ActorSystem
-  lazy val log = Logging(system, classOf[ShurlRoutes])
-  def shurlRegistryActor: ActorRef
   implicit val timeout = Timeout(5.seconds) // usually we'd obtain the timeout from the system's configuration
+  implicit val baseUrl: URL // The external base url.
+  def shurlRegistryActor: ActorRef
+  val log = Logging(system, classOf[ShurlRoutes])
 
-  def shurlRoutes(baseUrl: URL): Route = concat(
+  def shurlRoutes: Route = concat(
     path("create") {
       post {
         entity(as[LongUrl]) { longUrl =>
           val idCreated = (shurlRegistryActor ? CreateShortUrl(longUrl)).mapTo[ShortUrlId]
           onSuccess(idCreated) { shortUrlId =>
-            val shortUrl = shortUrlId.toURL(baseUrl)
+            val shortUrl = shortUrlId.toURL
             log.info(s"Created short url $longUrl -> $shortUrl")
             complete((StatusCodes.Created, shortUrl))
           }

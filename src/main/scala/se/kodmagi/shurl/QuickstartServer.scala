@@ -15,8 +15,8 @@ object QuickstartServer extends App with ShurlRoutes {
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   val shurlRegistryActor: ActorRef = system.actorOf(ShurlRegistryActor.props, "shurlRegistryActor")
   val port = 8099
-  private val baseUrl = new URL(s"http://localhost:$port")
-  lazy val routes: Route = shurlRoutes(baseUrl)
+  val baseUrl = new URL(s"http://localhost:$port")
+  val routes: Route = shurlRoutes
   Http().bindAndHandle(routes, "localhost", port)
   log.info(s"Server online at ${baseUrl.toExternalForm}")
   Await.result(system.whenTerminated, Duration.Inf)

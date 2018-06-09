@@ -10,7 +10,7 @@ import org.scalatest.{ Matchers, WordSpec }
 class ShurlRoutesSpec extends WordSpec with Matchers with ScalaFutures with ScalatestRouteTest with ShurlRoutes {
   override val shurlRegistryActor: ActorRef = system.actorOf(ShurlRegistryActor.props, "shurlRegistry")
   val baseUrl = new URL("http://localhost:8080")
-  lazy val routes = shurlRoutes(baseUrl)
+  val routes = shurlRoutes
   val longUrl = LongUrl("http://www.kodmagi.se")
   val longEntity = Marshal(longUrl).to[MessageEntity].futureValue // futureValue is from ScalaFutures
   val shortUrlId = longUrl.shortUrlId
