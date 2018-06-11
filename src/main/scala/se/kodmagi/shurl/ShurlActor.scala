@@ -1,15 +1,16 @@
 package se.kodmagi.shurl
 import akka.actor.{ Actor, ActorLogging, Props }
+import akka.http.scaladsl.model.Uri
 
 object ShurlActor {
-  final case object GetLongUrl
-  def props(longUrl: LongUrl): Props = Props(new ShurlActor(longUrl))
+  final case object GetLongUri
+  def props(longUri: Uri): Props = Props(new ShurlActor(longUri))
 }
 
-class ShurlActor(longUrl: LongUrl) extends Actor with ActorLogging {
-  import se.kodmagi.shurl.ShurlActor.GetLongUrl
+class ShurlActor(longUri: Uri) extends Actor with ActorLogging {
+  import se.kodmagi.shurl.ShurlActor.GetLongUri
   def receive: Receive = {
-    case GetLongUrl =>
-      sender() ! Some(longUrl)
+    case GetLongUri =>
+      sender() ! Some(longUri)
   }
 }

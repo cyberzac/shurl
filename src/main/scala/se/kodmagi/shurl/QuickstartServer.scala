@@ -2,7 +2,6 @@ package se.kodmagi.shurl
 import java.net.URL
 
 import akka.actor.{ ActorRef, ActorSystem }
-import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
@@ -18,6 +17,6 @@ object QuickstartServer extends App with ShurlRoutes {
   val baseUrl = new URL(s"http://localhost:$port")
   val routes: Route = shurlRoutes
   Http().bindAndHandle(routes, "localhost", port)
-  log.info(s"Server online at ${baseUrl.toExternalForm}")
+  system.log.info(s"Server online at ${baseUrl.toExternalForm}")
   Await.result(system.whenTerminated, Duration.Inf)
 }
